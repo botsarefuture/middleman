@@ -39,7 +39,7 @@ setup(
     extras_require={
         "postgres": ["psycopg2>=2.8.5"],
         "dev": [
-            "isort==5.10.1",
+            "isort==5.11.4",
             "flake8==5.0.4",
             "flake8-comprehensions==3.10.0",
             "black==22.10.0",
