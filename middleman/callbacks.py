@@ -3,8 +3,15 @@ import logging
 
 # noinspection PyPackageRequirements
 from nio import (
-    JoinError, MatrixRoom, Event, RoomKeyEvent, RoomMessageText, MegolmEvent, LocalProtocolError,
-    RoomKeyRequestError, RoomMemberEvent,
+    JoinError,
+    MatrixRoom,
+    Event,
+    RoomKeyEvent,
+    RoomMessageText,
+    MegolmEvent,
+    LocalProtocolError,
+    RoomKeyRequestError,
+    RoomMemberEvent,
 )
 
 from middleman.bot_commands import Command
@@ -42,9 +49,11 @@ class Callbacks(object):
 
     async def decryption_failure(self, room: MatrixRoom, event: MegolmEvent):
         """Callback for when an event fails to decrypt."""
-        message = f"Failed to decrypt event {event.event_id} in room {room.name} ({room.canonical_alias} / " \
-                  f"{room.room_id}) from {event.sender} (session {event.session_id} - decrypting " \
-                  f"if keys arrive."
+        message = (
+            f"Failed to decrypt event {event.event_id} in room {room.name} ({room.canonical_alias} / "
+            f"{room.room_id}) from {event.sender} (session {event.session_id} - decrypting "
+            f"if keys arrive."
+        )
         logger.warning(message)
 
         # Store for later
@@ -53,7 +62,8 @@ class Callbacks(object):
         waiting_for_keys = self.store.get_encrypted_events_for_user(event.sender)
         logger.info(
             "Waiting to decrypt %s events from sender %s",
-            len(waiting_for_keys), event.sender,
+            len(waiting_for_keys),
+            event.sender,
         )
 
         # Send a request for the key
@@ -61,10 +71,17 @@ class Callbacks(object):
         try:
             response = await self.client.request_room_key(event)
         except LocalProtocolError as ex:
-            if str(ex) != "A key sharing request is already sent out for this session id.":
-                logger.warning(f"Failed to request room key for event {event.event_id}: {ex}")
+            if (
+                str(ex)
+                != "A key sharing request is already sent out for this session id."
+            ):
+                logger.warning(
+                    f"Failed to request room key for event {event.event_id}: {ex}"
+                )
         if isinstance(response, RoomKeyRequestError):
-            logger.warning("RoomKeyRequestError: %s (%s)", response.message, response.status_code)
+            logger.warning(
+                "RoomKeyRequestError: %s (%s)", response.message, response.status_code
+            )
 
         # Send a message to the management room if
         # * matrix logging is not enabled
@@ -81,7 +98,9 @@ class Callbacks(object):
         if len(self.received_events) > DUPLICATES_CACHE_SIZE:
             self.received_events = self.received_events[:DUPLICATES_CACHE_SIZE]
         if len(self.welcome_message_sent_to_room) > DUPLICATES_CACHE_SIZE:
-            self.welcome_message_sent_to_room = self.welcome_message_sent_to_room[:DUPLICATES_CACHE_SIZE]
+            self.welcome_message_sent_to_room = self.welcome_message_sent_to_room[
+                :DUPLICATES_CACHE_SIZE
+            ]
 
     async def member(self, room: MatrixRoom, event: RoomMemberEvent) -> None:
         """Callback for when a room member event is received.
@@ -91,7 +110,10 @@ class Callbacks(object):
 
             event (nio.events.room_events.RoomMemberEvent): The event
         """
-        if self.config.matrix_logging_room and room.room_id == self.config.matrix_logging_room:
+        if (
+            self.config.matrix_logging_room
+            and room.room_id == self.config.matrix_logging_room
+        ):
             # Don't react to anything in the logging room
             return
 
@@ -114,12 +136,16 @@ class Callbacks(object):
         # Send welcome message if configured
         if self.config.welcome_message and room.is_group:
             if room.room_id in self.welcome_message_sent_to_room:
-                logger.debug(f"Not sending welcome message to room {room.room_id} - it's been sent already!")
+                logger.debug(
+                    f"Not sending welcome message to room {room.room_id} - it's been sent already!"
+                )
                 return
             # Send welcome message
             logger.info(f"Sending welcome message to room {room.room_id}")
             self.welcome_message_sent_to_room.insert(0, room.room_id)
-            await send_text_to_room(self.client, room.room_id, self.config.welcome_message, True)
+            await send_text_to_room(
+                self.client, room.room_id, self.config.welcome_message, True
+            )
 
         # Notify the management room for visibility
         logger.info(f"Notifying management room of room join to {room.room_id}")
@@ -139,7 +165,10 @@ class Callbacks(object):
             event (nio.events.room_events.RoomMessageText): The event defining the message
 
         """
-        if self.config.matrix_logging_room and room.room_id == self.config.matrix_logging_room:
+        if (
+            self.config.matrix_logging_room
+            and room.room_id == self.config.matrix_logging_room
+        ):
             # Don't react to anything in the logging room
             return
 
@@ -165,14 +194,16 @@ class Callbacks(object):
         )
 
         # Process as message if in a public room without command prefix
-        has_command_prefix = msg.startswith(self.command_prefix) or msg.startswith("!message")
+        has_command_prefix = msg.startswith(self.command_prefix) or msg.startswith(
+            "!message"
+        )
 
         if has_command_prefix:
             if msg.startswith("!message"):
                 msg = msg[1:]
             else:
                 # Remove the command prefix
-                msg = msg[len(self.command_prefix):]
+                msg = msg[len(self.command_prefix) :]
 
             command = Command(self.client, self.store, self.config, msg, room, event)
             await command.process()
@@ -204,11 +235,14 @@ class Callbacks(object):
             log_func = logger.debug
         log_func(
             "Got room key event for session %s, user %s, matched sessions: %s",
-            event.session_id, event.sender, len(events),
+            event.session_id,
+            event.sender,
+            len(events),
         )
         log_func(
             "Waiting to decrypt %s events from sender %s",
-            len(waiting_for_keys), event.sender,
+            len(waiting_for_keys),
+            event.sender,
         )
 
         if not events:
@@ -222,16 +256,24 @@ class Callbacks(object):
                 params["transaction_id"] = event_dict["transaction_id"]
                 megolm_event = MegolmEvent.from_dict(params)
             except Exception as ex:
-                logger.warning("Failed to restore MegolmEvent for %s: %s", encrypted_event["event_id"], ex)
+                logger.warning(
+                    "Failed to restore MegolmEvent for %s: %s",
+                    encrypted_event["event_id"],
+                    ex,
+                )
                 continue
             try:
                 # noinspection PyTypeChecker
                 decrypted = self.client.decrypt_event(megolm_event)
             except Exception as ex:
-                logger.warning("Error decrypting event %s: %s", megolm_event.event_id, ex)
+                logger.warning(
+                    "Error decrypting event %s: %s", megolm_event.event_id, ex
+                )
                 continue
             if isinstance(decrypted, Event):
-                logger.info("Successfully decrypted stored event %s", decrypted.event_id)
+                logger.info(
+                    "Successfully decrypted stored event %s", decrypted.event_id
+                )
                 parsed_event = Event.parse_event(decrypted.source)
                 logger.info("Parsed event: %s", parsed_event)
                 self.store.remove_encrypted_event(decrypted.event_id)

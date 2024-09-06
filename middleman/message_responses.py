@@ -41,10 +41,12 @@ class Message(object):
         # splitting by `\n\n` which ends the quoted reply section for a body - at least produced by Element.
         # FIXME: Parse the HTML body if there is one, which is a more reliable way to get rid of the
         # original message being replied to.
-        message_parts = self.message_content.split('\n\n', 1)
+        message_parts = self.message_content.split("\n\n", 1)
         if len(message_parts) < 2:
             # We can abort here already, no reply section
-            logger.debug(f"Skipping {self.event.event_id} which doesn't contain a reply section")
+            logger.debug(
+                f"Skipping {self.event.event_id} which doesn't contain a reply section"
+            )
             return
         reply_section = message_parts[1]
         if reply_to and reply_section.startswith("!reply "):
@@ -74,18 +76,24 @@ class Message(object):
                         management_room_text = "Message delivered back to the sender."
                     else:
                         management_room_text = f"Message delivered back to the sender in room {message['room_id']}."
-                    logger.info(f"Message {self.event.event_id} relayed back to the original sender")
+                    logger.info(
+                        f"Message {self.event.event_id} relayed back to the original sender"
+                    )
                 elif isinstance(response, RoomSendError):
                     if self.config.confirm_reaction:
                         management_room_text = self.config.confirm_reaction_fail
                     else:
-                        management_room_text = f"Failed to send message back to sender: {response.message}"
+                        management_room_text = (
+                            f"Failed to send message back to sender: {response.message}"
+                        )
                     logger.warning(management_room_text)
                 else:
                     if self.config.confirm_reaction:
                         management_room_text = self.config.confirm_reaction_fail
                     else:
-                        management_room_text = f"Failed to send message back to sender: {response}"
+                        management_room_text = (
+                            f"Failed to send message back to sender: {response}"
+                        )
                     logger.warning(management_room_text)
                 # Confirm in management room
                 if self.config.confirm_reaction:
@@ -93,7 +101,7 @@ class Message(object):
                         self.client,
                         self.room.room_id,
                         self.event.event_id,
-                        management_room_text
+                        management_room_text,
                     )
                 else:
                     await send_text_to_room(
@@ -107,11 +115,17 @@ class Message(object):
                     f"Skipping message {self.event.event_id} which is not a reply to one of our relay messages",
                 )
         elif replaces:
-            message_content = self.event.source.get("content", {}).get("m.new_content", {}).get("body")
-            message_parts = message_content.split('\n\n', 1)
+            message_content = (
+                self.event.source.get("content", {})
+                .get("m.new_content", {})
+                .get("body")
+            )
+            message_parts = message_content.split("\n\n", 1)
             if len(message_parts) < 2:
                 # We can abort here already, no reply section
-                logger.debug(f"Skipping replaces {self.event.event_id} which doesn't contain a reply section")
+                logger.debug(
+                    f"Skipping replaces {self.event.event_id} which doesn't contain a reply section"
+                )
                 return
             reply_section = message_parts[1]
             if reply_section.startswith("!reply "):
@@ -137,16 +151,24 @@ class Message(object):
                                 room_id=message["room_id"],
                             )
                             if self.config.anonymise_senders:
-                                management_room_text = "Edit delivered back to the sender."
+                                management_room_text = (
+                                    "Edit delivered back to the sender."
+                                )
                             else:
-                                management_room_text = f"Edit delivered back to the sender in " \
-                                                       f"room {message['room_id']}."
-                            logger.info(f"Edit {self.event.event_id} relayed back to the original sender")
+                                management_room_text = (
+                                    f"Edit delivered back to the sender in "
+                                    f"room {message['room_id']}."
+                                )
+                            logger.info(
+                                f"Edit {self.event.event_id} relayed back to the original sender"
+                            )
                         elif isinstance(response, RoomSendError):
                             management_room_text = f"Failed to send edit back to sender: {response.message}"
                             logger.warning(management_room_text)
                         else:
-                            management_room_text = f"Failed to send edit back to sender: {response}"
+                            management_room_text = (
+                                f"Failed to send edit back to sender: {response}"
+                            )
                             logger.warning(management_room_text)
                         # Confirm in management room
                         await send_text_to_room(
@@ -156,7 +178,9 @@ class Message(object):
                             True,
                         )
         else:
-            logger.debug(f"Skipping {self.event.event_id} which does not look like a reply")
+            logger.debug(
+                f"Skipping {self.event.event_id} which does not look like a reply"
+            )
 
     def is_mention_only_room(self, identifiers: List[str], is_named: bool) -> bool:
         """
@@ -183,29 +207,49 @@ class Message(object):
     async def relay_to_management_room(self):
         """Relay to the management room."""
         # First check if we want to relay this
-        if self.is_mention_only_room([self.room.canonical_alias, self.room.room_id], self.room.is_named):
+        if self.is_mention_only_room(
+            [self.room.canonical_alias, self.room.room_id], self.room.is_named
+        ):
             # Did we get mentioned?
-            mentioned = self.config.user_id in get_mentions(self.message_content) or \
-                        self.message_content.lower().find(self.config.user_localpart.lower()) > -1
+            mentioned = (
+                self.config.user_id in get_mentions(self.message_content)
+                or self.message_content.lower().find(self.config.user_localpart.lower())
+                > -1
+            )
             if not mentioned:
-                logger.debug("Skipping message %s in room %s as it's set to only relay on mention and we were not "
-                             "mentioned.", self.event.event_id, self.room.room_id)
+                logger.debug(
+                    "Skipping message %s in room %s as it's set to only relay on mention and we were not "
+                    "mentioned.",
+                    self.event.event_id,
+                    self.room.room_id,
+                )
                 return
-            logger.info("Room %s marked as mentions only and we have been mentioned, so relaying %s",
-                        self.room.room_id, self.event.event_id)
+            logger.info(
+                "Room %s marked as mentions only and we have been mentioned, so relaying %s",
+                self.room.room_id,
+                self.event.event_id,
+            )
 
         if self.config.anonymise_senders:
             text = f"anonymous: <i>{self.message_content}</i>"
         else:
-            text = f"{self.event.sender} in {self.room.display_name} (`{self.room.room_id}`): " \
-                   f"{self.message_content}"
-        response = await send_text_to_room(self.client, self.config.management_room, text, False)
+            text = (
+                f"{self.event.sender} in {self.room.display_name} (`{self.room.room_id}`): "
+                f"{self.message_content}"
+            )
+        response = await send_text_to_room(
+            self.client, self.config.management_room, text, False
+        )
         if type(response) == RoomSendResponse and response.event_id:
             self.store.store_message(
                 self.event.event_id,
                 response.event_id,
                 self.room.room_id,
             )
-            logger.info("Message %s relayed to the management room", self.event.event_id)
+            logger.info(
+                "Message %s relayed to the management room", self.event.event_id
+            )
         else:
-            logger.error("Failed to relay message %s to the management room", self.event.event_id)
+            logger.error(
+                "Failed to relay message %s to the management room", self.event.event_id
+            )
