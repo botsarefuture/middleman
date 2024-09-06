@@ -86,7 +86,9 @@ class Command(object):
             return
 
         if len(self.args) < 2:
-            await send_text_to_room(self.client, self.room.room_id, commands_help.COMMAND_WRITE)
+            await send_text_to_room(
+                self.client, self.room.room_id, commands_help.COMMAND_WRITE
+            )
             return
 
         replaces = get_replaces(self.event)
@@ -104,7 +106,9 @@ class Command(object):
         # Strip the leading spaces
         text = text.strip()
 
-        response = await send_text_to_room(self.client, room, text, False, replaces_event_id=replaces_event_id)
+        response = await send_text_to_room(
+            self.client, room, text, False, replaces_event_id=replaces_event_id
+        )
 
         if type(response) == RoomSendResponse and response.event_id:
             self.store.store_message(
@@ -114,13 +118,23 @@ class Command(object):
             )
             if replaces_event_id:
                 logger.info(f"Processed editing message in room {room}")
-                await send_text_to_room(self.client, self.room.room_id, f"Message was edited in {room}")
+                await send_text_to_room(
+                    self.client, self.room.room_id, f"Message was edited in {room}"
+                )
             else:
                 logger.info(f"Processed sending message to room {room}")
-                await send_text_to_room(self.client, self.room.room_id, f"Message was delivered to {room}")
+                await send_text_to_room(
+                    self.client, self.room.room_id, f"Message was delivered to {room}"
+                )
             return
 
-        error_message = response if type(response == str) else getattr(response, "message", "Unknown error")
+        error_message = (
+            response
+            if type(response == str)
+            else getattr(response, "message", "Unknown error")
+        )
         await send_text_to_room(
-            self.client, self.room.room_id, f"Failed to deliver message to {room}! Error: {error_message}",
+            self.client,
+            self.room.room_id,
+            f"Failed to deliver message to {room}! Error: {error_message}",
         )

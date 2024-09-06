@@ -5,6 +5,7 @@ import sys
 from typing import Any, List
 
 import yaml
+
 # noinspection PyPackageRequirements
 from aiolog import matrix
 
@@ -80,7 +81,7 @@ class Config(object):
         if database_path.startswith(sqlite_scheme):
             self.database = {
                 "type": "sqlite",
-                "connection_string": database_path[len(sqlite_scheme):],
+                "connection_string": database_path[len(sqlite_scheme) :],
             }
         elif database_path.startswith(postgres_scheme):
             self.database = {"type": "postgres", "connection_string": database_path}
@@ -107,13 +108,19 @@ class Config(object):
         self.command_prefix = self._get_cfg(["command_prefix"], default="!c") + " "
 
         # Matrix logging
-        matrix_logging_enabled = self._get_cfg(["logging", "matrix_logging", "enabled"], default=False)
+        matrix_logging_enabled = self._get_cfg(
+            ["logging", "matrix_logging", "enabled"], default=False
+        )
         self.matrix_logging_room = None
         if matrix_logging_enabled:
             if not self.user_token:
-                logger.warning("Not setting up Matrix logging - requires user access token to be set")
+                logger.warning(
+                    "Not setting up Matrix logging - requires user access token to be set"
+                )
             else:
-                self.matrix_logging_room = self._get_cfg(["logging", "matrix_logging", "room"], required=True)
+                self.matrix_logging_room = self._get_cfg(
+                    ["logging", "matrix_logging", "room"], required=True
+                )
                 handler = matrix.Handler(
                     homeserver_url=self.homeserver_url,
                     access_token=self.user_token,
@@ -123,20 +130,41 @@ class Config(object):
                 logger.addHandler(handler)
 
         # Middleman specific config
-        self.management_room = self._get_cfg(["middleman", "management_room"], required=True)
-        self.management_room_id = self.management_room if self.management_room.startswith("!") else None
-        self.anonymise_senders = self._get_cfg(["middleman", "anonymise_senders"], required=False, default=False)
-        self.welcome_message = self._get_cfg(["middleman", "welcome_message"], required=False)
-        self.mention_only_rooms = self._get_cfg(["middleman", "mention_only_rooms"], required=False, default=[])
-        self.mention_only_always_for_named = self._get_cfg(
-            ["middleman", "mention_only_always_for_named"], required=False, default=False,
+        self.management_room = self._get_cfg(
+            ["middleman", "management_room"], required=True
         )
-        self.confirm_reaction = self._get_cfg(["middleman", "confirm_reaction", "enabled"], required=False, default=False)
-        self.confirm_reaction_success = self._get_cfg(["middleman", "confirm_reaction", "success"], required=False, default="✔️")
-        self.confirm_reaction_fail = self._get_cfg(["middleman", "confirm_reaction", "fail"], required=False, default="❗")
+        self.management_room_id = (
+            self.management_room if self.management_room.startswith("!") else None
+        )
+        self.anonymise_senders = self._get_cfg(
+            ["middleman", "anonymise_senders"], required=False, default=False
+        )
+        self.welcome_message = self._get_cfg(
+            ["middleman", "welcome_message"], required=False
+        )
+        self.mention_only_rooms = self._get_cfg(
+            ["middleman", "mention_only_rooms"], required=False, default=[]
+        )
+        self.mention_only_always_for_named = self._get_cfg(
+            ["middleman", "mention_only_always_for_named"],
+            required=False,
+            default=False,
+        )
+        self.confirm_reaction = self._get_cfg(
+            ["middleman", "confirm_reaction", "enabled"], required=False, default=False
+        )
+        self.confirm_reaction_success = self._get_cfg(
+            ["middleman", "confirm_reaction", "success"], required=False, default="✔️"
+        )
+        self.confirm_reaction_fail = self._get_cfg(
+            ["middleman", "confirm_reaction", "fail"], required=False, default="❗"
+        )
 
     def _get_cfg(
-        self, path: List[str], default: Any = None, required: bool = True,
+        self,
+        path: List[str],
+        default: Any = None,
+        required: bool = True,
     ) -> Any:
         """Get a config option from a path and option name, specifying whether it is
         required.

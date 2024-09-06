@@ -8,15 +8,22 @@ import nio
 
 
 # Domain part from https://stackoverflow.com/a/106223/1489738
-USER_ID_REGEX = r"@[a-z0-9_=\/\-\.]*:(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9]" \
-                r"[A-Za-z0-9\-]*[A-Za-z0-9])*"
+USER_ID_REGEX = (
+    r"@[a-z0-9_=\/\-\.]*:(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9]"
+    r"[A-Za-z0-9\-]*[A-Za-z0-9])*"
+)
 
 
 def get_in_reply_to(event: nio.Event) -> Optional[str]:
     """
     Pulls an in reply to event ID from an event, if any.
     """
-    return event.source.get("content", {}).get("m.relates_to", {}).get("m.in_reply_to", {}).get("event_id")
+    return (
+        event.source.get("content", {})
+        .get("m.relates_to", {})
+        .get("m.in_reply_to", {})
+        .get("event_id")
+    )
 
 
 def get_mentions(text: str) -> List[str]:

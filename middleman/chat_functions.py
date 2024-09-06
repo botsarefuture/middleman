@@ -2,15 +2,27 @@ import logging
 from typing import Union
 
 from commonmark import commonmark
+
 # noinspection PyPackageRequirements
-from nio import SendRetryError, RoomSendResponse, RoomSendError, LocalProtocolError, AsyncClient
+from nio import (
+    SendRetryError,
+    RoomSendResponse,
+    RoomSendError,
+    LocalProtocolError,
+    AsyncClient,
+)
 
 logger = logging.getLogger(__name__)
 
 
 async def send_text_to_room(
-    client: AsyncClient, room: str, message: str, notice: bool = True, markdown_convert: bool = True,
-    reply_to_event_id: str = None, replaces_event_id: str = None,
+    client: AsyncClient,
+    room: str,
+    message: str,
+    notice: bool = True,
+    markdown_convert: bool = True,
+    reply_to_event_id: str = None,
+    replaces_event_id: str = None,
 ) -> Union[RoomSendResponse, RoomSendError, str]:
     """Send text to a matrix room
 

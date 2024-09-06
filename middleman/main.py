@@ -4,6 +4,7 @@ from time import sleep
 
 # noinspection PyPackageRequirements
 from aiohttp import ClientConnectionError, ServerDisconnectedError
+
 # noinspection PyPackageRequirements
 from nio import (
     AsyncClient,
@@ -59,13 +60,17 @@ async def main(config: Config):
     # noinspection PyTypeChecker
     client.add_event_callback(callbacks.member, (RoomMemberEvent,))
     # noinspection PyTypeChecker
-    client.add_event_callback(callbacks.message, (RoomMessageText, RoomMessageNotice, RoomMessageFormatted))
+    client.add_event_callback(
+        callbacks.message, (RoomMessageText, RoomMessageNotice, RoomMessageFormatted)
+    )
     # noinspection PyTypeChecker
     client.add_event_callback(callbacks.invite, (InviteMemberEvent,))
     # noinspection PyTypeChecker
     client.add_event_callback(callbacks.decryption_failure, (MegolmEvent,))
     # noinspection PyTypeChecker
-    client.add_to_device_callback(callbacks.room_key, (ForwardedRoomKeyEvent, RoomKeyEvent))
+    client.add_to_device_callback(
+        callbacks.room_key, (ForwardedRoomKeyEvent, RoomKeyEvent)
+    )
 
     # Keep trying to reconnect on failure (with some time in-between)
     while True:
@@ -81,7 +86,8 @@ async def main(config: Config):
                 # Try to login with the configured username/password
                 try:
                     login_response = await client.login(
-                        password=config.user_password, device_name=config.device_name,
+                        password=config.user_password,
+                        device_name=config.device_name,
                     )
 
                     # Check if login failed
@@ -110,17 +116,22 @@ async def main(config: Config):
                 logger.info(f"Management room membership is good")
 
             # Resolve management room ID if not known
-            if config.management_room.startswith('#'):
+            if config.management_room.startswith("#"):
                 # Resolve the room ID
                 response = await client.room_resolve_alias(config.management_room)
                 if type(response) == RoomResolveAliasResponse:
                     config.management_room_id = response.room_id
                 else:
-                    logger.fatal("Could not resolve the management room ID from alias, aborting")
+                    logger.fatal(
+                        "Could not resolve the management room ID from alias, aborting"
+                    )
                     break
 
             # Try join the logging room if configured
-            if config.matrix_logging_room and config.matrix_logging_room != config.management_room_id:
+            if (
+                config.matrix_logging_room
+                and config.matrix_logging_room != config.management_room_id
+            ):
                 response = await client.join(config.matrix_logging_room)
                 if type(response) == JoinError:
                     logger.warning("Could not join the logging room")
